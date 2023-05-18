@@ -18,8 +18,8 @@ import (
 // For more details, see the documentation at
 // https://www.elastic.co/guide/en/elasticsearch/reference/7.9/async-search.html
 type XPackAsyncSearchDelete struct {
-	client *Client
-
+	client     *Client
+	storeType  string      // store type, such like: es opensearch
 	pretty     *bool       // pretty format the returned JSON response
 	human      *bool       // return human readable values for statistics
 	errorTrace *bool       // include the stack trace of returned errors
@@ -35,6 +35,12 @@ func NewXPackAsyncSearchDelete(client *Client) *XPackAsyncSearchDelete {
 	return &XPackAsyncSearchDelete{
 		client: client,
 	}
+}
+
+// StoreType update store type
+func (s *XPackAsyncSearchDelete) StoreType(storeType string) *XPackAsyncSearchDelete {
+	s.storeType = storeType
+	return s
 }
 
 // Pretty tells Elasticsearch whether to return a formatted JSON response.
@@ -85,8 +91,15 @@ func (s *XPackAsyncSearchDelete) ID(id string) *XPackAsyncSearchDelete {
 
 // buildURL builds the URL for the operation.
 func (s *XPackAsyncSearchDelete) buildURL() (string, url.Values, error) {
-	path := fmt.Sprintf("/_async_search/%s", url.PathEscape(s.id))
 
+	path := ""
+	switch s.storeType {
+	case "opensearch":
+		path = fmt.Sprintf("/_plugins/_asynchronous_search/%s", url.PathEscape(s.id))
+	default:
+		path = fmt.Sprintf("/_async_search/%s", url.PathEscape(s.id))
+
+	}
 	// Add query string parameters
 	params := url.Values{}
 	if v := s.pretty; v != nil {

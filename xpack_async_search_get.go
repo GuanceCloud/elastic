@@ -20,6 +20,7 @@ import (
 type XPackAsyncSearchGet struct {
 	client *Client
 
+	storeType  string      // store type, such like es/opensearch
 	pretty     *bool       // pretty format the returned JSON response
 	human      *bool       // return human readable values for statistics
 	errorTrace *bool       // include the stack trace of returned errors
@@ -41,6 +42,12 @@ func NewXPackAsyncSearchGet(client *Client) *XPackAsyncSearchGet {
 	return &XPackAsyncSearchGet{
 		client: client,
 	}
+}
+
+// StoreType update store type
+func (s *XPackAsyncSearchGet) StoreType(storeType string) *XPackAsyncSearchGet {
+	s.storeType = storeType
+	return s
 }
 
 // Pretty tells Elasticsearch whether to return a formatted JSON response.
@@ -106,7 +113,14 @@ func (s *XPackAsyncSearchGet) KeepAlive(keepAlive string) *XPackAsyncSearchGet {
 
 // buildURL builds the URL for the operation.
 func (s *XPackAsyncSearchGet) buildURL() (string, url.Values, error) {
-	path := fmt.Sprintf("/_async_search/%s", url.PathEscape(s.id))
+	path := ""
+	switch s.storeType {
+
+	case "opensearch":
+		path = fmt.Sprintf("/_plugins/_asynchronous_search/%s", url.PathEscape(s.id))
+	default:
+		path = fmt.Sprintf("/_async_search/%s", url.PathEscape(s.id))
+	}
 
 	// Add query string parameters
 	params := url.Values{}
