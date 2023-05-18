@@ -29,6 +29,7 @@ type XPackAsyncSearchSubmit struct {
 	errorTrace *bool       // include the stack trace of returned errors
 	filterPath []string    // list of filters used to reduce the response
 	headers    http.Header // custom request-level HTTP headers
+	storeType  string      // storeType like opensearch,es
 
 	searchSource               *SearchSource // q
 	source                     interface{}
@@ -67,6 +68,12 @@ func NewXPackAsyncSearchSubmit(client *Client) *XPackAsyncSearchSubmit {
 		searchSource: NewSearchSource(),
 	}
 	return builder
+}
+
+// StoreType update store type
+func (s *XPackAsyncSearchSubmit) StoreType(storeType string) *XPackAsyncSearchSubmit {
+	s.storeType = storeType
+	return s
 }
 
 // Pretty tells Elasticsearch whether to return a formatted JSON response.
@@ -540,6 +547,40 @@ func (s *XPackAsyncSearchSubmit) KeepAlive(keepAlive string) *XPackAsyncSearchSu
 func (s *XPackAsyncSearchSubmit) buildURL() (string, url.Values, error) {
 	var err error
 	var path string
+
+	switch s.storeType {
+	case "opensearch":
+		if len(s.index) > 0 {
+			path, err = uritemplates.Expand(
+				"/{index}/_plugins/_asynchronous_search",
+				map[string]string{"index": strings.Join(s.index, ",")})
+		} else {
+			path = "/_plugins/_asynchronous_search"
+		}
+		if err != nil {
+			return "", url.Values{}, err
+		}
+	default:
+		if len(s.index) > 0 && len(s.typ) > 0 {
+			path, err = uritemplates.Expand("/{index}/{type}/_async_search", map[string]string{
+				"index": strings.Join(s.index, ","),
+				"type":  strings.Join(s.typ, ","),
+			})
+		} else if len(s.index) > 0 {
+			path, err = uritemplates.Expand("/{index}/_async_search", map[string]string{
+				"index": strings.Join(s.index, ","),
+			})
+		} else if len(s.typ) > 0 {
+			path, err = uritemplates.Expand("/_all/{type}/_async_search", map[string]string{
+				"type": strings.Join(s.typ, ","),
+			})
+		} else {
+			path = "/_async_search"
+		}
+		if err != nil {
+			return "", url.Values{}, err
+		}
+	}
 
 	if len(s.index) > 0 && len(s.typ) > 0 {
 		path, err = uritemplates.Expand("/{index}/{type}/_async_search", map[string]string{
