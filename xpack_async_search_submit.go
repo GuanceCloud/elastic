@@ -582,26 +582,6 @@ func (s *XPackAsyncSearchSubmit) buildURL() (string, url.Values, error) {
 		}
 	}
 
-	if len(s.index) > 0 && len(s.typ) > 0 {
-		path, err = uritemplates.Expand("/{index}/{type}/_async_search", map[string]string{
-			"index": strings.Join(s.index, ","),
-			"type":  strings.Join(s.typ, ","),
-		})
-	} else if len(s.index) > 0 {
-		path, err = uritemplates.Expand("/{index}/_async_search", map[string]string{
-			"index": strings.Join(s.index, ","),
-		})
-	} else if len(s.typ) > 0 {
-		path, err = uritemplates.Expand("/_all/{type}/_async_search", map[string]string{
-			"type": strings.Join(s.typ, ","),
-		})
-	} else {
-		path = "/_async_search"
-	}
-	if err != nil {
-		return "", url.Values{}, err
-	}
-
 	// Add query string parameters
 	params := url.Values{}
 	if v := s.pretty; v != nil {
